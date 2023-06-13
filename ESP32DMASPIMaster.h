@@ -50,7 +50,7 @@ class Master {
         .flags = SPICOMMON_BUSFLAG_MASTER,
     };
 
-    spi_host_device_t host {HSPI_HOST};
+    spi_host_device_t host {SPI2_HOST};
     spi_device_handle_t handle;
     int dma_chan {SPI_DMA_CH_AUTO};  // must be 1, 2 or SPI_DMA_CH_AUTO
 
@@ -61,10 +61,10 @@ public:
     // VSPI (CS:  5, CLK: 18, MOSI: 23, MISO: 19)
     // HSPI (CS: 15, CLK: 14, MOSI: 13, MISO: 12) -> default
     bool begin(const uint8_t spi_bus = HSPI) {
-        bus_cfg.mosi_io_num = (spi_bus == VSPI) ? MOSI : 13;
-        bus_cfg.miso_io_num = (spi_bus == VSPI) ? MISO : 12;
-        bus_cfg.sclk_io_num = (spi_bus == VSPI) ? SCK : 14;
-        if_cfg.spics_io_num = (spi_bus == VSPI) ? SS : 15;
+        bus_cfg.mosi_io_num = (spi_bus == 3) ? MOSI : 13;
+        bus_cfg.miso_io_num = (spi_bus == 3) ? MISO : 12;
+        bus_cfg.sclk_io_num = (spi_bus == 3) ? SCK : 14;
+        if_cfg.spics_io_num = (spi_bus == 3) ? SS : 15;
         return initialize(spi_bus);
     }
 
@@ -299,7 +299,7 @@ public:
 
 private:
     bool initialize(const uint8_t spi_bus) {
-        host = (spi_bus == HSPI) ? HSPI_HOST : VSPI_HOST;
+        host = (spi_bus == HSPI) ? SPI2_HOST : SPI3_HOST;
 
         bus_cfg.flags |= SPICOMMON_BUSFLAG_MASTER;
 
