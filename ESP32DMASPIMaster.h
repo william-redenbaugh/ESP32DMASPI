@@ -35,7 +35,7 @@ class Master {
         .cs_ena_posttrans = 0,
         .clock_speed_hz = SPI_MASTER_FREQ_8M,
         .input_delay_ns = 0,
-        .spics_io_num = 15,  // HSPI
+        .spics_io_num = SS,
         .flags = 0,
         .queue_size = 3,
         .pre_cb = NULL,
@@ -43,9 +43,9 @@ class Master {
     };
 
     spi_bus_config_t bus_cfg {
-        .mosi_io_num = 13,        // HSPI
-        .miso_io_num = 12,        // HSPI
-        .sclk_io_num = 14,        // HSPI
+        .mosi_io_num = MOSI,
+        .miso_io_num = MISO,
+        .sclk_io_num = SCK,
         .max_transfer_sz = 4092,  // default: 4092 if DMA enabled, SOC_SPI_MAXIMUM_BUFFER_SIZE if DMA disabled
         .flags = SPICOMMON_BUSFLAG_MASTER,
     };
@@ -57,18 +57,18 @@ class Master {
     std::deque<spi_transaction_ext_t> transactions;
 
 public:
-    // use HSPI or VSPI with default pin assignment
-    // VSPI (CS:  5, CLK: 18, MOSI: 23, MISO: 19)
-    // HSPI (CS: 15, CLK: 14, MOSI: 13, MISO: 12) -> default
+    // use SPI with the default pin assignment
     bool begin(const uint8_t spi_bus = HSPI) {
-        bus_cfg.mosi_io_num = (spi_bus == 3) ? MOSI : 13;
-        bus_cfg.miso_io_num = (spi_bus == 3) ? MISO : 12;
-        bus_cfg.sclk_io_num = (spi_bus == 3) ? SCK : 14;
-        if_cfg.spics_io_num = (spi_bus == 3) ? SS : 15;
+#ifdef CONFIG_IDF_TARGET_ESP32
+        bus_cfg.mosi_io_num = (spi_bus == VSPI) ? MOSI : 13;
+        bus_cfg.miso_io_num = (spi_bus == VSPI) ? MISO : 12;
+        bus_cfg.sclk_io_num = (spi_bus == VSPI) ? SCK : 14;
+        if_cfg.spics_io_num = (spi_bus == VSPI) ? SS : 15;
+#endif
         return initialize(spi_bus);
     }
 
-    // use HSPI or VSPI with your own pin assignment
+    // use SPI with your own pin assignment
     bool begin(const uint8_t spi_bus, const int8_t sck, const int8_t miso, const int8_t mosi, const int8_t ss) {
         bus_cfg.sclk_io_num = sck;
         bus_cfg.miso_io_num = miso;
@@ -298,8 +298,31 @@ public:
     }
 
 private:
+    spi_host_device_t hostFromBusNumber(uint8_t spi_bus) const {
+        switch (spi_bus) {
+            case FSPI:
+#ifdef CONFIG_IDF_TARGET_ESP32
+                return SPI1_HOST;
+#else
+                return SPI2_HOST;
+#endif
+            case HSPI:
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32C3)
+                return SPI2_HOST;
+#else
+                return SPI3_HOST;
+#endif
+#ifdef CONFIG_IDF_TARGET_ESP32
+            case VSPI:
+                return SPI3_HOST;
+#endif
+            default:
+                return SPI2_HOST;
+        }
+    }
+
     bool initialize(const uint8_t spi_bus) {
-        host = (spi_bus == HSPI) ? SPI2_HOST : SPI3_HOST;
+        host = hostFromBusNumber(spi_bus);
 
         bus_cfg.flags |= SPICOMMON_BUSFLAG_MASTER;
 
