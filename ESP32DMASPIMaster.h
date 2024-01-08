@@ -30,6 +30,7 @@ class Master {
         .address_bits = 0,  // 0-64
         .dummy_bits = 0,
         .mode = SPI_MODE0,
+        .clock_source = SPI_CLK_SRC_DEFAULT,
         .duty_cycle_pos = 128,  // default: 128
         .cs_ena_pretrans = 0,   // only for half-duplex
         .cs_ena_posttrans = 0,
@@ -46,8 +47,16 @@ class Master {
         .mosi_io_num = MOSI,
         .miso_io_num = MISO,
         .sclk_io_num = SCK,
+        .data2_io_num = 0,
+        .data3_io_num = 0,
+        .data4_io_num = 0, 
+        .data5_io_num = 0, 
+        .data6_io_num = 0, 
+        .data7_io_num = 0,
         .max_transfer_sz = 4092,  // default: 4092 if DMA enabled, SOC_SPI_MAXIMUM_BUFFER_SIZE if DMA disabled
         .flags = SPICOMMON_BUSFLAG_MASTER,
+        .isr_cpu_id = INTR_CPU_ID_AUTO, 
+        .intr_flags = 0
     };
 
     spi_host_device_t host {SPI2_HOST};
